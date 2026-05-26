@@ -19,6 +19,13 @@ app.use(( req, res, next) =>  {
 app.use('/', router);
 app.use('/api', router );
 
+app.use((req, res, next) => {
+    res.status(404).json({
+        status: "error",
+        message: `Cannot ${req.method} ${req.path} - 404 Resource not found`
+    });
+});
+
 app.listen(port, () => {
     console.log(`Server berjalan di http://localhost:${port}`);
 });
