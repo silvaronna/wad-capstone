@@ -5,6 +5,7 @@ const routes = require('./routes');
 const tasksRoutes = require('./routes/tasks.routes');
 const setupSwagger = require('./docs/swagger');
 const app = express();
+const usersRoutes = require('./routes/users.routes');
 // ─── Middleware Global ───────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -23,6 +24,7 @@ app.use('/', routes); // /health
 app.use('/api', routes); // /api/info, /api/echo/:msg
 
 app.use('/api/v1/tasks', tasksRoutes); // /api/v1/tasks (CRUD)
+app.use('/api/v1/users', usersRoutes);
 // ─── Swagger UI ─────────────────────────────────────────────
 setupSwagger(app);
 // ─── 404 & Error Handlers ───────────────────────────────────
@@ -49,6 +51,7 @@ app.listen(config.port, () => {
 console.log('─'.repeat(50));
 console.log(` ${config.appName} v${config.version}`);
 console.log(` Environment : ${config.env}`);
+console.log(` Database : MySQL via XAMPP`);
 console.log(` Server : http://localhost:${config.port}`);
 console.log(` Docs : http://localhost:${config.port}/api/docs`);
 console.log('─'.repeat(50));

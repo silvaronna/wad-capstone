@@ -5,17 +5,27 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node src/index.js",
-    "start": "nodemon src/index.js"
+    "start": "nodemon src/index.js",
+    "db:seed": "node prisma/seed.js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "author": "azkaAbdillah",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@prisma/adapter-mariadb": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "joi": "^18.2.1",
+    "mariadb": "^3.5.2",
     "nodemon": "^3.1.14",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "prisma": "^7.8.0"
   }
 }
