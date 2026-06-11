@@ -11,11 +11,12 @@ WAD Capstone API adalah backend service modern untuk sistem manajemen tugas (Tas
 
 ## ✨ Fitur Utama
 
+- **Authentication System**: Implementasi JWT (JSON Web Token) dengan Access Token & Refresh Token.
+- **Advanced Security**: Password hashing menggunakan **Argon2id**, Refresh Token Rotation, dan **Reuse Detection** untuk keamanan maksimal.
+- **Multi-user Isolation**: Setiap user hanya dapat mengakses dan mengelola data task milik mereka sendiri.
 - **Full CRUD Tasks**: Manajemen tugas lengkap dengan status dan prioritas.
 - **Advanced Filtering & Sorting**: Filter berdasarkan status, prioritas, serta custom sorting (createdAt, title, dll).
 - **Pagination**: Sistem pagination yang efisien untuk handle data dalam jumlah besar.
-- **Relational Data**: Integrasi relasi antara User, Task, dan Category.
-- **Robust Validation**: Validasi input ketat menggunakan Joi Middleware.
 - **Interactive Documentation**: Dokumentasi API lengkap menggunakan Swagger UI.
 - **Prisma 7 Architecture**: Menggunakan Driver Adapter terbaru (`@prisma/adapter-mariadb`) untuk performa maksimal.
 
@@ -27,9 +28,9 @@ WAD Capstone API adalah backend service modern untuk sistem manajemen tugas (Tas
 - **Framework**: Express.js v5
 - **ORM**: Prisma v7.8.0
 - **Database**: MySQL (via XAMPP/Docker)
+- **Security**: Argon2, JsonWebToken, UUID
 - **Validation**: Joi
 - **Documentation**: Swagger / OpenAPI 3.0
-- **Development**: Nodemon, Dotenv
 
 ---
 
@@ -47,26 +48,28 @@ npm install
 ```
 
 ### 3. Konfigurasi Environment
-Buat file `.env` di root directory dan sesuaikan koneksi database Anda:
+Buat file `.env` di root directory dan sesuaikan koneksi database serta secret JWT:
 ```env
 PORT=3000
 NODE_ENV=development
 APP_NAME="WAD Capstone API"
 APP_VERSION=1.0.0
 
-# Format: mysql://USER:PASSWORD@HOST:PORT/DATABASE
-DATABASE_URL="mysql://root:password@localhost:3306/wadcapstone"
+# Database
+DATABASE_URL="mysql://root@localhost:3306/wadcapstone"
+
+# JWT Secrets
+JWT_ACCESS_SECRET="your_access_secret_key"
+JWT_REFRESH_SECRET="your_refresh_secret_key"
+JWT_ACCESS_EXPIRES_IN="15m"
+JWT_REFRESH_EXPIRES_IN="7d"
 ```
 
 ### 4. Setup Database (Prisma)
-Jalankan migrasi untuk membuat tabel di MySQL:
+Jalankan migrasi untuk sinkronisasi schema:
 ```bash
-npx prisma migrate dev --name init_schema
-```
-
-*(Opsional)* Seed data awal:
-```bash
-npm run db:seed
+npx prisma migrate dev --name add_refresh_token
+npx prisma generate
 ```
 
 ### 5. Jalankan Aplikasi
@@ -85,16 +88,25 @@ npm run dev
 Setelah server berjalan, Anda dapat mengakses dokumentasi interaktif di:
 👉 **[http://localhost:3000/api/docs](http://localhost:3000/api/docs)**
 
-### Endpoint Populer
+### Endpoint Utama
 
-| Method | Endpoint | Deskripsi |
-| :--- | :--- | :--- |
-| `GET` | `/api/v1/tasks` | List semua task + Pagination & Filter |
-| `POST` | `/api/v1/tasks` | Membuat task baru |
-| `GET` | `/api/v1/tasks/:id` | Detail task berdasarkan ID |
-| `PATCH` | `/api/v1/tasks/:id` | Update sebagian data task |
-| `DELETE` | `/api/v1/tasks/:id` | Menghapus task |
-| `GET` | `/api/v1/users/:userId/tasks` | Get semua task milik user tertentu (JOIN) |
+#### 🔐 Autentikasi (`/auth`)
+| Method | Endpoint | Deskripsi | Auth |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/auth/register` | Registrasi user baru | No |
+| `POST` | `/auth/login` | Login dan dapatkan Access & Refresh Token | No |
+| `POST` | `/auth/refresh` | Refresh Access Token menggunakan Refresh Token | No |
+| `POST` | `/auth/logout` | Revoke Refresh Token (Logout) | No |
+| `GET` | `/auth/me` | Dapatkan profil user yang sedang login | Yes |
+
+#### 📝 Manajemen Task (`/api/v1/tasks`)
+| Method | Endpoint | Deskripsi | Auth |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/tasks` | List task user + Pagination & Filter | Yes |
+| `POST` | `/api/v1/tasks` | Membuat task baru | Yes |
+| `GET` | `/api/v1/tasks/:id` | Detail task berdasarkan ID | Yes |
+| `PATCH` | `/api/v1/tasks/:id` | Update sebagian data task | Yes |
+| `DELETE` | `/api/v1/tasks/:id` | Menghapus task | Yes |
 
 ---
 
@@ -103,11 +115,11 @@ Setelah server berjalan, Anda dapat mengakses dokumentasi interaktif di:
 /src
   ├── config/         # Konfigurasi (Prisma, App)
   ├── controllers/    # Logika handling request
-  ├── data/           # Mock data (jika ada)
   ├── docs/           # Konfigurasi Swagger
-  ├── middleware/     # Global/Route middlewares (Validasi)
+  ├── middleware/     # Global/Route middlewares (Auth, Validasi)
   ├── repositories/   # Abstraksi akses database (Prisma logic)
   ├── routes/         # Definisi endpoint API
+  ├── services/       # Logika bisnis (Auth service)
   └── validators/     # Schema validasi Joi
 /prisma
   ├── schema.prisma   # Definisi model database

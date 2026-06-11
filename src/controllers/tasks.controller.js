@@ -3,7 +3,10 @@ const taskRepo = require("../repositories/task.repository");
 const listTasks = async (req, res, next) => {
   try {
     const { status, priority, sort, order, limit, offset } = req.query;
+    const userId = req.user.userId; // Ambil dari token
+
     const { data, total } = await taskRepo.findMany({
+      userId, // Filter by user
       status,
       priority,
       sort,
@@ -29,11 +32,12 @@ const listTasks = async (req, res, next) => {
     next(err);
   }
 };
+
 const createTask = async (req, res, next) => {
   try {
     const task = await taskRepo.create({
       ...req.body,
-      userId: req.body.userId || 1,
+      userId: req.user.userId, // Selalu gunakan ID dari token
     });
     res.status(201).set("Location", `/api/v1/tasks/${task.id}`).json({
       data: task,
@@ -42,6 +46,7 @@ const createTask = async (req, res, next) => {
     next(err);
   }
 };
+
 const getTask = async (req, res, next) => {
   try {
     const task = await taskRepo.findById(req.params.id);
