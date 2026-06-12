@@ -15,6 +15,8 @@ listTasksSchema,
 *   get:
 *     summary: Ambil daftar task dengan pagination, filtering, dan sorting
 *     tags: [Tasks]
+*     security:
+*       - bearerAuth: []
 *     parameters:
 *       - in: query
 *         name: status
@@ -45,6 +47,8 @@ router.get('/', validate(listTasksSchema, 'query'), ctrl.listTasks);
 *   post:
 *     summary: Buat task baru
 *     tags: [Tasks]
+*     security:
+*       - bearerAuth: []
 *     requestBody:
 *       required: true
 *       content:
@@ -58,8 +62,96 @@ router.get('/', validate(listTasksSchema, 'query'), ctrl.listTasks);
 *         description: Data tidak valid
 */
 router.post('/', validate(createTaskSchema, 'body'), ctrl.createTask);
+/**
+ * @swagger
+ * /tasks/{id}:
+ *   get:
+ *     summary: Ambil detail task by ID
+ *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Detail task ditemukan
+ *       404:
+ *         description: Task tidak ditemukan
+ */
 router.get('/:id', ctrl.getTask);
+
+/**
+ * @swagger
+ * /tasks/{id}:
+ *   put:
+ *     summary: Ganti seluruh data task (Replace)
+ *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateTask'
+ *     responses:
+ *       200:
+ *         description: Task berhasil diperbarui
+ */
 router.put('/:id', validate(replaceTaskSchema, 'body'), ctrl.updateTask);
+
+/**
+ * @swagger
+ * /tasks/{id}:
+ *   patch:
+ *     summary: Update sebagian data task
+ *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateTask'
+ *     responses:
+ *       200:
+ *         description: Task berhasil diperbarui
+ */
 router.patch('/:id', validate(updateTaskSchema, 'body'), ctrl.updateTask);
+
+/**
+ * @swagger
+ * /tasks/{id}:
+ *   delete:
+ *     summary: Hapus task
+ *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Task berhasil dihapus
+ */
 router.delete('/:id', ctrl.deleteTask);
 module.exports = router;

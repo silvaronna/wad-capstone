@@ -2,6 +2,7 @@
 require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const { PrismaMariaDb } = require('@prisma/adapter-mariadb');
+const argon2 = require('argon2');
 
 const { hostname, port, username, password, pathname } = new URL(
   process.env.DATABASE_URL
@@ -21,7 +22,8 @@ async function main() {
   console.log('Mulai seeding database MySQL...');
 
   // Hapus data lama — urutan PENTING karena foreign key constraint!
-  // Hapus task dulu (bergantung pada users & categories)
+  await prisma.refreshToken.deleteMany();
+  await prisma.attachment.deleteMany();
   await prisma.task.deleteMany();
   await prisma.category.deleteMany();
   await prisma.user.deleteMany();
@@ -42,21 +44,20 @@ async function main() {
   console.log(' ✓ 3 kategori dibuat');
 
   // ─── Buat Users ───────────────────────────────────────
-  // CATATAN: password di-seed sebagai plain text.
-  // Di aplikasi nyata, password WAJIB di-hash (Minggu 6: bcrypt/argon2).
+  const hashedPassword = await argon2.hash('P@ssw0rd!');
   const [budi, siti] = await Promise.all([
     prisma.user.create({
       data: {
         name: 'Budi Santoso',
         email: 'budi@example.com',
-        password: 'hashed_later',
+        password: hashedPassword,
       },
     }),
     prisma.user.create({
       data: {
         name: 'Siti Rahayu',
         email: 'siti@example.com',
-        password: 'hashed_later',
+        password: hashedPassword,
       },
     }),
   ]);

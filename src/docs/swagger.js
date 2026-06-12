@@ -13,6 +13,13 @@ description: 'REST API untuk capstone project Web Advanced Development.',
 servers: [{ url: `http://localhost:${config.port}/api/v1`, description:
 'Local Dev' }],
 components: {
+securitySchemes: {
+  bearerAuth: {
+    type: 'http',
+    scheme: 'bearer',
+    bearerFormat: 'JWT',
+  },
+},
 schemas: {
 CreateTask: {
 type: 'object',
@@ -63,7 +70,7 @@ message: { type: 'string' },
 tags: [{ name: 'Tasks', description: 'Operasi CRUD untuk resource Task' }],
 },
 // swagger-jsdoc akan membaca JSDoc comment dari file-file ini
-apis: ['./src/routes/*.js'],
+apis: ['./src/routes/*.js', './src/media/*.js'],
 };
 
 const swaggerSpec = swaggerJsdoc(options);
