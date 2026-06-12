@@ -12,12 +12,13 @@ WAD Capstone API adalah backend service modern untuk sistem manajemen tugas (Tas
 ## ✨ Fitur Utama
 
 - **Authentication System**: Implementasi JWT (JSON Web Token) dengan Access Token & Refresh Token.
-- **Advanced Security**: Password hashing menggunakan **Argon2id**, Refresh Token Rotation, dan **Reuse Detection** untuk keamanan maksimal.
-- **Multi-user Isolation**: Setiap user hanya dapat mengakses dan mengelola data task milik mereka sendiri.
-- **Full CRUD Tasks**: Manajemen tugas lengkap dengan status dan prioritas.
-- **Advanced Filtering & Sorting**: Filter berdasarkan status, prioritas, serta custom sorting (createdAt, title, dll).
-- **Pagination**: Sistem pagination yang efisien untuk handle data dalam jumlah besar.
-- **Interactive Documentation**: Dokumentasi API lengkap menggunakan Swagger UI.
+- **Advanced Security**: Password hashing menggunakan **Argon2id**, Refresh Token Rotation, dan **Reuse Detection**.
+- **Media Management**: Fitur baru untuk mengelola attachment file (Media) yang tertaut ke Task dan User.
+- **Multi-user Isolation**: Setiap user hanya dapat mengakses data task dan media milik mereka sendiri.
+- **Full CRUD Tasks & Media**: Manajemen tugas dan file attachment lengkap.
+- **Advanced Filtering & Sorting**: Filter berdasarkan status, prioritas, serta custom sorting.
+- **Pagination**: Sistem pagination yang efisien untuk data Task dan Media.
+- **Interactive Documentation**: Dokumentasi API lengkap menggunakan Swagger UI dengan dukungan Bearer Auth.
 - **Prisma 7 Architecture**: Menggunakan Driver Adapter terbaru (`@prisma/adapter-mariadb`) untuk performa maksimal.
 
 ---
@@ -38,7 +39,7 @@ WAD Capstone API adalah backend service modern untuk sistem manajemen tugas (Tas
 
 ### 1. Clone Repositori
 ```bash
-git clone https://github.com/username/wadv2.git
+git clone https://github.com/silvaronna/wad-capstone.git
 cd wadv2
 ```
 
@@ -66,13 +67,20 @@ JWT_REFRESH_EXPIRES_IN="7d"
 ```
 
 ### 4. Setup Database (Prisma)
-Jalankan migrasi untuk sinkronisasi schema:
+Jalankan migrasi untuk sinkronisasi schema dan generate client:
 ```bash
-npx prisma migrate dev --name add_refresh_token
+npx prisma migrate dev
 npx prisma generate
 ```
 
-### 5. Jalankan Aplikasi
+### 5. Seeding Data (Optional)
+Gunakan script seeding untuk mengisi data awal (termasuk user test dengan password ter-hash):
+```bash
+npm run db:seed
+```
+*Note: Default password untuk user seed adalah `P@ssw0rd!`*
+
+### 6. Jalankan Aplikasi
 ```bash
 # Mode Development (dengan nodemon)
 npm start
@@ -88,25 +96,33 @@ npm run dev
 Setelah server berjalan, Anda dapat mengakses dokumentasi interaktif di:
 👉 **[http://localhost:3000/api/docs](http://localhost:3000/api/docs)**
 
-### Endpoint Utama
+### Endpoint Utama (`/api/v1`)
 
 #### 🔐 Autentikasi (`/auth`)
 | Method | Endpoint | Deskripsi | Auth |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/auth/register` | Registrasi user baru | No |
 | `POST` | `/auth/login` | Login dan dapatkan Access & Refresh Token | No |
-| `POST` | `/auth/refresh` | Refresh Access Token menggunakan Refresh Token | No |
+| `POST` | `/auth/refresh` | Refresh Access Token | No |
 | `POST` | `/auth/logout` | Revoke Refresh Token (Logout) | No |
-| `GET` | `/auth/me` | Dapatkan profil user yang sedang login | Yes |
+| `GET` | `/auth/me` | Dapatkan profil user saat ini | Yes |
 
-#### 📝 Manajemen Task (`/api/v1/tasks`)
+#### 📝 Manajemen Task (`/tasks`)
 | Method | Endpoint | Deskripsi | Auth |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/v1/tasks` | List task user + Pagination & Filter | Yes |
-| `POST` | `/api/v1/tasks` | Membuat task baru | Yes |
-| `GET` | `/api/v1/tasks/:id` | Detail task berdasarkan ID | Yes |
-| `PATCH` | `/api/v1/tasks/:id` | Update sebagian data task | Yes |
-| `DELETE` | `/api/v1/tasks/:id` | Menghapus task | Yes |
+| `GET` | `/tasks` | List task user + Pagination & Filter | Yes |
+| `POST` | `/tasks` | Membuat task baru | Yes |
+| `GET` | `/tasks/:id` | Detail task (termasuk media/attachments) | Yes |
+| `PATCH` | `/tasks/:id` | Update sebagian data task | Yes |
+| `DELETE` | `/tasks/:id` | Menghapus task | Yes |
+
+#### 📁 Manajemen Media (`/media`)
+| Method | Endpoint | Deskripsi | Auth |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/media` | List media/attachments | Yes |
+| `POST` | `/media` | Menambahkan attachment baru ke Task | Yes |
+| `GET` | `/media/:id` | Detail media | Yes |
+| `DELETE` | `/media/:id` | Menghapus media | Yes |
 
 ---
 
@@ -116,25 +132,16 @@ Setelah server berjalan, Anda dapat mengakses dokumentasi interaktif di:
   ├── config/         # Konfigurasi (Prisma, App)
   ├── controllers/    # Logika handling request
   ├── docs/           # Konfigurasi Swagger
-  ├── middleware/     # Global/Route middlewares (Auth, Validasi)
-  ├── repositories/   # Abstraksi akses database (Prisma logic)
-  ├── routes/         # Definisi endpoint API
+  ├── media/          # Fitur Media (Repository, Controller, Routes) 🆕
+  ├── middleware/     # Middlewares (Auth, Validasi)
+  ├── repositories/   # Abstraksi database untuk User & Task
+  ├── routes/         # Definisi endpoint (Auth, Tasks, Users)
   ├── services/       # Logika bisnis (Auth service)
   └── validators/     # Schema validasi Joi
 /prisma
-  ├── schema.prisma   # Definisi model database
-  └── seed.js         # Script data awal
+  ├── schema.prisma   # Definisi model database (User, Task, Category, Attachment, RefreshToken)
+  └── seed.js         # Script data awal dengan hashing Argon2
 ```
-
----
-
-## 🤝 Kontribusi
-
-1. Fork project ini
-2. Buat branch fitur baru (`git checkout -b feature/AmazingFeature`)
-3. Commit perubahan Anda (`git commit -m 'Add some AmazingFeature'`)
-4. Push ke branch (`git push origin feature/AmazingFeature`)
-5. Buat Pull Request
 
 ---
 
