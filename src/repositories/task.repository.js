@@ -15,10 +15,11 @@ where,
 orderBy: { [sort]: order },
 take: Number(limit),
 skip: Number(offset),
-include: {
-user: { select: { id: true, name: true, email: true } },
-category: { select: { id: true, name: true, color: true } },
-},
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          category: { select: { id: true, name: true, color: true } },
+          attachments: true,
+        },
 }),
 prisma.task.count({ where }),
 ]);
@@ -28,10 +29,11 @@ return { data, total };
 async findById(id) {
 return prisma.task.findUnique({
 where: { id: Number(id) },
-include: {
-user: { select: { id: true, name: true, email: true } },
-category: { select: { id: true, name: true, color: true } },
-},
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          category: { select: { id: true, name: true, color: true } },
+          attachments: true,
+        },
 });
 },
 // ─── Buat task baru ─────────────────────────────────────
@@ -47,10 +49,11 @@ dueDate: data.dueDate ? new Date(data.dueDate) : null,
 userId: Number(data.userId),
 categoryId: data.categoryId ? Number(data.categoryId) : null,
 },
-include: {
-user: { select: { id: true, name: true, email: true } },
-category: { select: { id: true, name: true, color: true } },
-},
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          category: { select: { id: true, name: true, color: true } },
+          attachments: true,
+        },
 });
 },
 // ─── Update sebagian field (PATCH) ──────────────────────
@@ -66,10 +69,11 @@ priority: data.priority ? data.priority.toUpperCase()
 dueDate: data.dueDate ? new Date(data.dueDate)
 : undefined,
 },
-include: {
-user: { select: { id: true, name: true, email: true } },
-category: { select: { id: true, name: true, color: true } },
-},
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          category: { select: { id: true, name: true, color: true } },
+          attachments: true,
+        },
 });
 } catch (e) {
 if (e.code === 'P2025') return null; // Record tidak ditemukan
@@ -92,8 +96,10 @@ return prisma.user.findUnique({
 where: { id: Number(userId) },
 include: {
   tasks: {
-include: { category: { select: { id: true, name: true, color:
-true } } },
+include: { 
+  category: { select: { id: true, name: true, color: true } },
+  attachments: true,
+},
 orderBy: { createdAt: 'desc' },
 },
 },

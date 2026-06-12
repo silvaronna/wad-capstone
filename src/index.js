@@ -1,8 +1,10 @@
 // File: src/index.js (versi terbaru Minggu 2)
 const config = require("./config");
 const express = require("express");
+const cors = require("cors");
 const routes = require("./routes");
 const tasksRoutes = require("./routes/tasks.routes");
+const mediaRoutes = require("./media/media.routes");
 const setupSwagger = require("./docs/swagger");
 const app = express();
 const usersRoutes = require("./routes/users.routes");
@@ -10,6 +12,7 @@ const authRoutes = require("./routes/auth.routes");
 const authenticate = require("./middleware/authenticate");
 
 // ─── Middleware Global ───────────────────────────────────────
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -24,11 +27,12 @@ app.use((req, res, next) => {
 });
 
 // ─── Routes ─────────────────────────────────────────────────
-app.use("/auth", authRoutes);
+app.use("/api/v1/auth", authRoutes);
 
 // Protected routes
 app.use("/api/v1/tasks", authenticate, tasksRoutes);
 app.use("/api/v1/users", authenticate, usersRoutes);
+app.use("/api/v1/media", authenticate, mediaRoutes);
 
 app.use("/", routes); // /health
 app.use("/api", routes); // /api/info, /api/echo/:msg

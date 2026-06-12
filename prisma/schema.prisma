@@ -15,6 +15,7 @@ model User {
   updatedAt     DateTime       @updatedAt
   refreshTokens RefreshToken[]
   tasks         Task[]
+  attachments   Attachment[]
 
   @@map("users")
 }
@@ -30,18 +31,19 @@ model Category {
 }
 
 model Task {
-  id          Int       @id @default(autoincrement())
-  title       String    @db.VarChar(200)
-  description String?   @db.Text
-  status      Status    @default(TODO)
-  priority    Priority  @default(MEDIUM)
+  id          Int          @id @default(autoincrement())
+  title       String       @db.VarChar(200)
+  description String?      @db.Text
+  status      Status       @default(TODO)
+  priority    Priority     @default(MEDIUM)
   dueDate     DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   userId      Int
   categoryId  Int?
-  category    Category? @relation(fields: [categoryId], references: [id])
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category?    @relation(fields: [categoryId], references: [id])
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attachments Attachment[]
 
   @@index([userId])
   @@index([status])
@@ -49,6 +51,26 @@ model Task {
   @@index([categoryId], map: "tasks_categoryId_fkey")
   @@map("tasks")
 }
+
+model Attachment {
+  id        Int      @id @default(autoincrement())
+  fileName  String   @db.VarChar(255)
+  fileUrl   String   @db.VarChar(512)
+  fileSize  Int
+  mimeType  String   @db.VarChar(100)
+  taskId    Int
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([userId])
+  @@map("attachments")
+}
+
 
 model RefreshToken {
   id        Int      @id @default(autoincrement())
