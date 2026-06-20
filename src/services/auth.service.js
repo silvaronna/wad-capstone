@@ -74,7 +74,8 @@ const authService = {
     const accessToken = signAccessToken({
       userId: user.id,
       email: user.email,
-    });
+      role: user.role, // ← Tambahkan role di payload
+      });    
     // 5. Buat refresh token (long-lived: 7 hari)
     const refreshToken = signRefreshToken({ userId: user.id });
     // 6. Simpan refresh token ke database
