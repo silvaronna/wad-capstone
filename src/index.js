@@ -47,12 +47,14 @@ app.use((req, res, next) => {
 });
 
 // ─── 6. Routes ───────────────────────────────────────
-app.use("/", routes);
-app.use("/api", routes);
-
-// Auth routes — rate limiting ketat
+// Rate limiters must run before the matching routes are handled
+app.use("/api/v1/auth/login", authLimiter);
+app.use("/api/v1/auth/refresh", sensitiveLimiter);
 app.use("/auth/login", authLimiter);
 app.use("/auth/refresh", sensitiveLimiter);
+
+app.use("/", routes);
+app.use("/api", routes);
 app.use("/auth", authRoutes);
 
 // Protected API routes

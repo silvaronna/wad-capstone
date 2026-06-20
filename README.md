@@ -5,149 +5,178 @@
 [![Express Version](https://img.shields.io/badge/express-5.2.1-lightgrey)](https://expressjs.com/)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 
-WAD Capstone API adalah backend service modern untuk sistem manajemen tugas (Task Management) yang dibangun menggunakan **Node.js**, **Express**, dan **Prisma ORM v7**. Project ini mendemonstrasikan implementasi RESTful API yang clean, scalable, dan terintegrasi dengan database MySQL.
+WAD Capstone API is a modern, high-performance backend task management service built using **Node.js (Express)** and **Prisma ORM (v7)**. The project features production-ready security patterns, Role-Based Access Control (RBAC), multi-tenant/multi-user data isolation, auto-rotation refresh tokens with reuse detection, rate limiting, and attachment management.
 
 ---
 
-## ✨ Fitur Utama
-
-- **Authentication System**: Implementasi JWT (JSON Web Token) dengan Access Token & Refresh Token.
-- **Advanced Security**: Password hashing menggunakan **Argon2id**, Refresh Token Rotation, dan **Reuse Detection**.
-- **Media Management**: Fitur baru untuk mengelola attachment file (Media) yang tertaut ke Task dan User.
-- **Multi-user Isolation**: Setiap user hanya dapat mengakses data task dan media milik mereka sendiri.
-- **Full CRUD Tasks & Media**: Manajemen tugas dan file attachment lengkap.
-- **Advanced Filtering & Sorting**: Filter berdasarkan status, prioritas, serta custom sorting.
-- **Pagination**: Sistem pagination yang efisien untuk data Task dan Media.
-- **Interactive Documentation**: Dokumentasi API lengkap menggunakan Swagger UI dengan dukungan Bearer Auth.
-- **Prisma 7 Architecture**: Menggunakan Driver Adapter terbaru (`@prisma/adapter-mariadb`) untuk performa maksimal.
-
----
-
-## 🛠️ Stack Teknologi
+## 🛠️ Tech Stack
 
 - **Runtime**: Node.js v22.x
-- **Framework**: Express.js v5
-- **ORM**: Prisma v7.8.0
-- **Database**: MySQL (via XAMPP/Docker)
-- **Security**: Argon2, JsonWebToken, UUID
-- **Validation**: Joi
-- **Documentation**: Swagger / OpenAPI 3.0
+- **Framework**: Express.js v5 (with preflight CORS optimizations)
+- **Database Engine**: MySQL / MariaDB
+- **ORM**: Prisma ORM v7.8.0 (utilizing the native MariaDB driver adapter `@prisma/adapter-mariadb`)
+- **Password Hashing**: Argon2id (conforming to OWASP recommendations: memoryCost 64MB, timeCost 3, parallelism 4)
+- **Authorization**: JSON Web Tokens (JWT)
+- **Request Validation**: Joi
+- **Security Middlewares**: Helmet (Header Security), CORS, Rate Limiters (express-rate-limit)
+- **Documentation**: Swagger UI / OpenAPI 3.0
 
 ---
 
-## 🚀 Instalasi & Setup
+## 🏗️ Folder Structure
 
-### 1. Clone Repositori
-```bash
-git clone https://github.com/silvaronna/wad-capstone.git
-cd wadv2
+```text
+/
+├── prisma/
+│   ├── schema.prisma   # Database schema models (User, Task, Category, Attachment, RefreshToken)
+│   └── seed.js         # Database seeder (Category, Users with Argon2id, Tasks)
+├── src/
+│   ├── config/         # System configurations (App configuration, CORS, rate limiter, Prisma Client)
+│   ├── controllers/    # Request and response controllers (Auth, Tasks, Health, Info, Echo)
+│   ├── docs/           # Swagger / OpenAPI documentation config
+│   ├── media/          # Media / Attachments module (Routes, Controller, Repository, Validator)
+│   ├── middleware/     # Custom Middlewares (JWT Authenticate, Role Authorize, Request Sanitizers)
+│   ├── repositories/   # Abstract data access layers (User & Task Repositories)
+│   ├── routes/         # Router mounting directory (Auth, Tasks, Users, Admin routers)
+│   ├── services/       # Core business services (Auth logic, Token Rotation & Reuse Detection)
+│   ├── validators/     # Request Joi validators
+│   └── index.js        # Main Express application initialization
+├── cakrawala_api_collection.json  # Exported Postman Collection
+├── verify_all_endpoints.sh        # Automated test verification runner
+└── docker-compose.yml             # Docker MySQL/MariaDB database container definition
 ```
 
-### 2. Install Dependensi
+---
+
+## 🚦 Chronological Installation & Setup Guide
+
+Follow these steps from scratch to set up and run the project:
+
+### Step 1: Install Prerequisites
+Ensure you have the following installed on your machine:
+- **Node.js** (v22.16.0 or higher)
+- **Docker** and **Docker Compose** (for running the database container)
+
+### Step 2: Install Project Dependencies
+Run npm install in the root folder of the project:
 ```bash
 npm install
 ```
 
-### 3. Konfigurasi Environment
-Buat file `.env` di root directory dan sesuaikan koneksi database serta secret JWT:
+### Step 3: Configure Environment Variables
+Create a `.env` file in the root directory. You can copy the values from `.env.example`:
+```bash
+cp .env.example .env
+```
+Inside `.env`, verify the credentials and settings:
 ```env
 PORT=3000
 NODE_ENV=development
 APP_NAME="WAD Capstone API"
 APP_VERSION=1.0.0
 
-# Database
-DATABASE_URL="mysql://root@localhost:3306/wadcapstone"
+# Database URL
+DATABASE_URL="mysql://root:guyonwaton@localhost:3306/wadcapstone"
 
-# JWT Secrets
-JWT_ACCESS_SECRET="your_access_secret_key"
-JWT_REFRESH_SECRET="your_refresh_secret_key"
-JWT_ACCESS_EXPIRES_IN="15m"
-JWT_REFRESH_EXPIRES_IN="7d"
+# JWT Secrets (used for sign and verify)
+JWT_ACCESS_SECRET=T3LK0MS3l!23
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_SECRET=T3LK0MS3l!23456789
+JWT_REFRESH_EXPIRES_IN=7d
+
+# Permitted Origins
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
 ```
 
-### 4. Setup Database (Prisma)
-Jalankan migrasi untuk sinkronisasi schema dan generate client:
+### Step 4: Spin Up the MySQL Database Container
+Start the MySQL database service and phpMyAdmin utility using Docker Compose:
 ```bash
+docker compose up -d
+```
+*You can access phpMyAdmin to visually manage the database at `http://localhost:8080`.*
+
+### Step 5: Run Database Migrations & Generate Prisma Client
+Apply the schema structure migrations to your MySQL database and generate the local Prisma Client:
+```bash
+# Apply database schemas
 npx prisma migrate dev
+
+# Generate local Prisma Client bindings
 npx prisma generate
 ```
 
-### 5. Seeding Data (Optional)
-Gunakan script seeding untuk mengisi data awal (termasuk user test dengan password ter-hash):
+### Step 6: Seed the Database
+Populate the database with initial categories, default users (including an admin), and testing tasks:
 ```bash
 npm run db:seed
 ```
-*Note: Default password untuk user seed adalah `P@ssw0rd!`*
+This inserts the following default testing credentials:
+- **Normal User Budi**: `budi@example.com` | Password: `P@ssw0rd!` (Role: `USER`)
+- **Normal User Siti**: `siti@example.com` | Password: `P@ssw0rd!` (Role: `USER`)
+- **Admin User**: `admin@example.com` | Password: `P@ssw0rd!` (Role: `ADMIN`)
 
-### 6. Jalankan Aplikasi
+### Step 7: Launch the Application
+Start the application in development mode:
 ```bash
-# Mode Development (dengan nodemon)
+# Run with Nodemon hot-reloading
 npm start
 
-# Mode Produksi
+# OR run using node directly
 npm run dev
 ```
+The server will boot up and remain active at **`http://localhost:3000`**.
 
 ---
 
-## 📖 Dokumentasi API
+## 💻 How to Test & Hit the Endpoints
 
-Setelah server berjalan, Anda dapat mengakses dokumentasi interaktif di:
+### 1. Postman Collection (`cakrawala_api_collection.json`)
+The [cakrawala_api_collection.json](file:///root/cakrawala/wadv2/cakrawala_api_collection.json) file contains a ready-to-import Postman Collection covering all endpoints:
+1. **Import in Postman**: Click *Import* -> Select `cakrawala_api_collection.json`.
+2. **Environment Variables**:
+   - `host` defaults to `http://localhost:3000`.
+   - `baseUrl` defaults to `http://localhost:3000/api/v1`.
+3. **Automated Token Assignment**: The `Login` and `Refresh Token` requests contain pre-configured Postman test scripts that automatically grab `accessToken` / `refreshToken` from the response payload and set them into the collection variables.
+4. **Endpoint Categories**:
+   - **Auth**: Register, Login, Me (Profile), Refresh Token, Logout.
+   - **Tasks**: List Tasks, Create Task, Get Task Detail, Update Task (PUT/Full & PATCH/Partial), Delete Task.
+   - **Media**: List Media, Create Media, Get Media Detail, Delete Media.
+   - **Users**: Get User Tasks (`/api/v1/users/:userId/tasks`).
+   - **Admin**: List Users, Update User Role, List All Tasks.
+   - **System**: Health Check, System Info, Echo.
+
+### 2. Interactive Swagger UI
+Access the auto-generated Swagger documentation for live endpoint testing:
 👉 **[http://localhost:3000/api/docs](http://localhost:3000/api/docs)**
 
-### Endpoint Utama (`/api/v1`)
-
-#### 🔐 Autentikasi (`/auth`)
-| Method | Endpoint | Deskripsi | Auth |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/auth/register` | Registrasi user baru | No |
-| `POST` | `/auth/login` | Login dan dapatkan Access & Refresh Token | No |
-| `POST` | `/auth/refresh` | Refresh Access Token | No |
-| `POST` | `/auth/logout` | Revoke Refresh Token (Logout) | No |
-| `GET` | `/auth/me` | Dapatkan profil user saat ini | Yes |
-
-#### 📝 Manajemen Task (`/tasks`)
-| Method | Endpoint | Deskripsi | Auth |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/tasks` | List task user + Pagination & Filter | Yes |
-| `POST` | `/tasks` | Membuat task baru | Yes |
-| `GET` | `/tasks/:id` | Detail task (termasuk media/attachments) | Yes |
-| `PATCH` | `/tasks/:id` | Update sebagian data task | Yes |
-| `DELETE` | `/tasks/:id` | Menghapus task | Yes |
-
-#### 📁 Manajemen Media (`/media`)
-| Method | Endpoint | Deskripsi | Auth |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/media` | List media/attachments | Yes |
-| `POST` | `/media` | Menambahkan attachment baru ke Task | Yes |
-| `GET` | `/media/:id` | Detail media | Yes |
-| `DELETE` | `/media/:id` | Menghapus media | Yes |
-
 ---
 
-## 🏗️ Struktur Folder
-```text
-/src
-  ├── config/         # Konfigurasi (Prisma, App)
-  ├── controllers/    # Logika handling request
-  ├── docs/           # Konfigurasi Swagger
-  ├── media/          # Fitur Media (Repository, Controller, Routes) 🆕
-  ├── middleware/     # Middlewares (Auth, Validasi)
-  ├── repositories/   # Abstraksi database untuk User & Task
-  ├── routes/         # Definisi endpoint (Auth, Tasks, Users)
-  ├── services/       # Logika bisnis (Auth service)
-  └── validators/     # Schema validasi Joi
-/prisma
-  ├── schema.prisma   # Definisi model database (User, Task, Category, Attachment, RefreshToken)
-  └── seed.js         # Script data awal dengan hashing Argon2
+## 🚦 Automated Test Suite (`verify_all_endpoints.sh`)
+
+We have created an automated verification suite that runs locally to test structural flows and security validations. Run it using bash:
+```bash
+bash verify_all_endpoints.sh
 ```
 
----
+The script runs the following workflow checks chronologically:
 
-## 📄 Lisensi
+1. **Alur 1 — Testing RBAC**
+   - Logs in as a standard user (`USER` role).
+   - Attempts to access the admin endpoint `GET /api/v1/admin/users` (returns `403 Forbidden` - **Expected**).
+   - Logs in as an admin (`ADMIN` role) and successfully fetches the user list (returns `200 OK` - **Expected**).
+   - Promotes a user to `ADMIN` (returns `200 OK` - **Expected**).
 
-Project ini dilisensikan di bawah **ISC License**.
+2. **Alur 2 — Testing Ownership Check**
+   - Retrieves all tasks owned by User Budi (verifies they belong exclusively to Budi's ID).
+   - Edits Budi's own task successfully (returns `200 OK` - **Expected**).
+   - Attempts to edit User Siti's task as User Budi (returns `403 Forbidden` - **Expected**).
+   - Performs editing on User Siti's task as Admin (returns `200 OK` - **Expected**).
 
----
-Developed with joy by **silvaronna**
+3. **Alur 3 — Testing Rate Limiting**
+   - Sends 6 consecutive invalid login requests to `/api/v1/auth/login`.
+   - The 6th request fails with `429 Too Many Requests` (**Expected**).
+   - Checks headers for `RateLimit-*` and `X-RateLimit-*` limiters (**Expected**).
+
+4. **Alur 4 — Testing Security Headers (Helmet)**
+   - Queries `/health` using curl.
+   - Verifies the inclusion of security headers: `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Strict-Transport-Security`, and `Referrer-Policy: no-referrer` (**Expected**).

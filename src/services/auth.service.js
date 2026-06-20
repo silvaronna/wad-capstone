@@ -130,6 +130,7 @@ const authService = {
     const newAccessToken = signAccessToken({
       userId: storedToken.userId,
       email: storedToken.user.email,
+      role: storedToken.user.role,
     });
     const newRefreshToken = signRefreshToken({ userId: storedToken.userId });
     // 7. Simpan refresh token baru

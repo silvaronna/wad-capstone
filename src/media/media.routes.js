@@ -2,7 +2,10 @@ const express = require('express');
 const router = express.Router();
 const ctrl = require('./media.controller');
 const validate = require('../middleware/validate');
+const authenticate = require('../middleware/authenticate');
 const { createMediaSchema } = require('./media.validator');
+
+router.use(authenticate);
 
 /**
  * @swagger

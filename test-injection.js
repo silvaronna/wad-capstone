@@ -1,3 +1,4 @@
+require("dotenv").config();
 const prisma = require("./src/config/prisma");
 async function demo() {
   // Input berbahaya dari penyerang
@@ -14,6 +15,7 @@ async function demo() {
   // Query: WHERE email = \"' OR '1'='1\" (sebagai literal string)
   // Hasilnya: null — tidak ada user dengan email seperti itu
   console.log("Result:", user); // null — injection GAGAL
+  await prisma.$disconnect();
 }
 demo();
 // Jalankan: node test-injection.js
