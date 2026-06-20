@@ -45,24 +45,22 @@ async function main() {
 
   // ─── Buat Users ───────────────────────────────────────
   const hashedPassword = await argon2.hash('P@ssw0rd!');
-  const [budi, siti] = await Promise.all([
-    prisma.user.create({
-      data: {
-        name: 'Budi Santoso',
-        email: 'budi@example.com',
-        password: hashedPassword,
-      },
-    }),
-    prisma.user.create({
-      data: {
-        name: 'Siti Rahayu',
-        email: 'siti@example.com',
-        password: hashedPassword,
-      },
-    }),
-  ]);
+  const [budi, siti, admin] = await Promise.all([
+prisma.user.create({ data: {
+name: 'Budi Santoso', email: 'budi@example.com',
+password: hashedPassword, role: 'USER'
+}}),
+prisma.user.create({ data: {
+name: 'Siti Rahayu', email: 'siti@example.com',
+password: hashedPassword, role: 'USER'
+}}),
+prisma.user.create({ data: {
+name: 'Admin WAD', email: 'admin@example.com',
+password: hashedPassword, role: 'ADMIN' // ← Admin
+}}),
+]);
 
-  console.log(' ✓ 2 user dibuat');
+  console.log(' ✓ 3 user dibuat');
 
   // ─── Buat Tasks ──────────────────────────────────────
   await Promise.all([

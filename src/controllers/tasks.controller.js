@@ -1,12 +1,13 @@
 // File: src/controllers/tasks.controller.js (versi MySQL)
 const taskRepo = require("../repositories/task.repository");
+
 const listTasks = async (req, res, next) => {
   try {
     const { status, priority, sort, order, limit, offset } = req.query;
-    const userId = req.user.userId; // Ambil dari token
-
+    // User biasa hanya lihat task miliknya; Admin lihat semua
+    const userId = req.user.role === "ADMIN" ? undefined : req.user.userId;
     const { data, total } = await taskRepo.findMany({
-      userId, // Filter by user
+      userId,
       status,
       priority,
       sort,
@@ -35,9 +36,10 @@ const listTasks = async (req, res, next) => {
 
 const createTask = async (req, res, next) => {
   try {
+    // Gunakan userId dari token — jangan percaya userId dari request body!
     const task = await taskRepo.create({
       ...req.body,
-      userId: req.user.userId, // Selalu gunakan ID dari token
+      userId: req.user.userId,
     });
     res.status(201).set("Location", `/api/v1/tasks/${task.id}`).json({
       data: task,
@@ -51,14 +53,12 @@ const getTask = async (req, res, next) => {
   try {
     const task = await taskRepo.findById(req.params.id);
     if (!task)
-      return res
-        .status(404)
-        .json({
-          error: {
-            code: "NOT_FOUND",
-            message: `Task ID ${req.params.id} tidak ditemukan.`,
-          },
-        });
+      return res.status(404).json({
+        error: {
+          code: "NOT_FOUND",
+          message: `Task ID ${req.params.id} tidak ditemukan.`,
+        },
+      });
     res.status(200).json({ data: task });
   } catch (err) {
     next(err);
@@ -68,14 +68,12 @@ const updateTask = async (req, res, next) => {
   try {
     const task = await taskRepo.update(req.params.id, req.body);
     if (!task)
-      return res
-        .status(404)
-        .json({
-          error: {
-            code: "NOT_FOUND",
-            message: `Task ID ${req.params.id} tidak ditemukan.`,
-          },
-        });
+      return res.status(404).json({
+        error: {
+          code: "NOT_FOUND",
+          message: `Task ID ${req.params.id} tidak ditemukan.`,
+        },
+      });
     res.status(200).json({ data: task });
   } catch (err) {
     next(err);
@@ -85,14 +83,12 @@ const deleteTask = async (req, res, next) => {
   try {
     const ok = await taskRepo.remove(req.params.id);
     if (!ok)
-      return res
-        .status(404)
-        .json({
-          error: {
-            code: "NOT_FOUND",
-            message: `Task ID ${req.params.id} tidak ditemukan.`,
-          },
-        });
+      return res.status(404).json({
+        error: {
+          code: "NOT_FOUND",
+          message: `Task ID ${req.params.id} tidak ditemukan.`,
+        },
+      });
     res.status(204).send();
   } catch (err) {
     next(err);
@@ -102,14 +98,12 @@ const getTasksByUser = async (req, res, next) => {
   try {
     const result = await taskRepo.findByUser(req.params.userId);
     if (!result)
-      return res
-        .status(404)
-        .json({
-          error: {
-            code: "NOT_FOUND",
-            message: `User ID ${req.params.userId} tidak ditemukan.`,
-          },
-        });
+      return res.status(404).json({
+        error: {
+          code: "NOT_FOUND",
+          message: `User ID ${req.params.userId} tidak ditemukan.`,
+        },
+      });
     res.status(200).json({
       data: {
         user: { id: result.id, name: result.name, email: result.email },
