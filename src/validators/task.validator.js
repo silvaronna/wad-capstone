@@ -15,33 +15,32 @@ title: Joi.string().trim().min(1).max(200).required()
 'any.required': 'title wajib diisi.',
 }),
 description: Joi.string().trim().max(1000).optional().allow(''),
-status: Joi.string().valid(...VALID_STATUS).default('todo')
+status: Joi.string().lowercase().valid(...VALID_STATUS).default('todo')
 .messages({ 'any.only': `status harus salah satu dari: ${VALID_STATUS.join(', ')}.` }),
-priority: Joi.string().valid(...VALID_PRIORITY).default('medium')
+priority: Joi.string().lowercase().valid(...VALID_PRIORITY).default('medium')
 .messages({ 'any.only': `priority harus salah satu dari: ${VALID_PRIORITY.join(', ')}.` }),
-dueDate: Joi.date().iso().min('now').optional()
-.messages({ 'date.min': 'dueDate tidak boleh di masa lalu.' }),
+dueDate: Joi.date().iso().optional().allow('', null),
 });
 // Schema untuk FULL UPDATE (PUT /tasks/:id) — semua field wajib
 const replaceTaskSchema = Joi.object({
 title: Joi.string().trim().min(1).max(200).required(),
 description: Joi.string().trim().max(1000).optional().allow(''),
-status: Joi.string().valid(...VALID_STATUS).required(),
-priority: Joi.string().valid(...VALID_PRIORITY).required(),
-dueDate: Joi.date().iso().optional().allow(null),
+status: Joi.string().lowercase().valid(...VALID_STATUS).required(),
+priority: Joi.string().lowercase().valid(...VALID_PRIORITY).required(),
+dueDate: Joi.date().iso().optional().allow('', null),
 });
 // Schema untuk PARTIAL UPDATE (PATCH /tasks/:id) — minimal 1 field
 const updateTaskSchema = Joi.object({
 title: Joi.string().trim().min(1).max(200),
 description: Joi.string().trim().max(1000).allow(''),
-status: Joi.string().valid(...VALID_STATUS),
-priority: Joi.string().valid(...VALID_PRIORITY),
-dueDate: Joi.date().iso().allow(null),
+status: Joi.string().lowercase().valid(...VALID_STATUS),
+priority: Joi.string().lowercase().valid(...VALID_PRIORITY),
+dueDate: Joi.date().iso().allow('', null),
 }).min(1).messages({ 'object.min': 'Minimal satu field harus diisi untuk update.' });
 // Schema untuk QUERY PARAMS di GET /tasks
 const listTasksSchema = Joi.object({
-status: Joi.string().valid(...VALID_STATUS).optional(),
-priority: Joi.string().valid(...VALID_PRIORITY).optional(),
+status: Joi.string().lowercase().valid(...VALID_STATUS).optional(),
+priority: Joi.string().lowercase().valid(...VALID_PRIORITY).optional(),
 sort: Joi.string().valid(...VALID_SORT).default('createdAt'),
 order: Joi.string().valid(...VALID_ORDER).default('desc'),
 limit: Joi.number().integer().min(1).max(100).default(10),

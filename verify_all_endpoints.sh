@@ -14,6 +14,11 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}=== RUNNING COMPREHENSIVE ENDPOINT VERIFICATION ===${NC}\n"
 
+# Helper to parse JSON using Node.js instead of jq
+json_extract() {
+  node -e "try { const obj = JSON.parse(process.argv[1]); console.log(eval('obj.' + process.argv[2])); } catch(e) { console.log(''); }" "$1" "$2"
+}
+
 # Seeding database to ensure a clean slate
 echo -e "${YELLOW}Seeding database...${NC}"
 npm run db:seed > /dev/null
@@ -28,8 +33,8 @@ echo -e "${YELLOW}=== ALUR 1 — Testing RBAC ===${NC}"
 LOGIN_BUDI_RES=$(curl -s -X POST "$BASE_URL/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"email": "budi@example.com", "password": "P@ssw0rd!"}')
-BUDI_TOKEN=$(echo $LOGIN_BUDI_RES | jq -r .accessToken)
-BUDI_USER_ID=$(echo $LOGIN_BUDI_RES | jq -r .data.id)
+BUDI_TOKEN=$(json_extract "$LOGIN_BUDI_RES" "accessToken")
+BUDI_USER_ID=$(json_extract "$LOGIN_BUDI_RES" "data.id")
 
 if [ "$BUDI_TOKEN" != "null" ] && [ -n "$BUDI_TOKEN" ]; then
     echo -e "  1. Login Budi (USER): ${GREEN}PASS (200 + token)${NC}"
@@ -53,7 +58,7 @@ fi
 LOGIN_ADMIN_RES=$(curl -s -X POST "$BASE_URL/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"email": "admin@example.com", "password": "P@ssw0rd!"}')
-ADMIN_TOKEN=$(echo $LOGIN_ADMIN_RES | jq -r .accessToken)
+ADMIN_TOKEN=$(json_extract "$LOGIN_ADMIN_RES" "accessToken")
 
 if [ "$ADMIN_TOKEN" != "null" ] && [ -n "$ADMIN_TOKEN" ]; then
     echo -e "  3. Login Admin (ADMIN): ${GREEN}PASS (200 + token)${NC}"
@@ -66,7 +71,7 @@ fi
 # 4. Akses admin route as ADMIN
 ADMIN_GET_RES=$(curl -s -X GET "$BASE_URL/admin/users" \
   -H "Authorization: Bearer $ADMIN_TOKEN")
-ADMIN_STATUS_CODE=$(echo $ADMIN_GET_RES | jq -r '.data | length')
+ADMIN_STATUS_CODE=$(json_extract "$ADMIN_GET_RES" "data.length")
 
 if [ "$ADMIN_STATUS_CODE" != "null" ]; then
     echo -e "  4. Akses admin route as ADMIN: ${GREEN}PASS (200 + list of $ADMIN_STATUS_CODE users)${NC}"
@@ -80,7 +85,7 @@ PROMOTE_RES=$(curl -s -X PATCH "$BASE_URL/admin/users/$BUDI_USER_ID/role" \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"role": "ADMIN"}')
-BUDI_NEW_ROLE=$(echo $PROMOTE_RES | jq -r .data.role)
+BUDI_NEW_ROLE=$(json_extract "$PROMOTE_RES" "data.role")
 
 if [ "$BUDI_NEW_ROLE" == "ADMIN" ]; then
     echo -e "  5. Promote Budi to ADMIN: ${GREEN}PASS (200 + role diubah to $BUDI_NEW_ROLE)${NC}"
@@ -102,10 +107,10 @@ npm run db:seed > /dev/null
 LOGIN_BUDI_RES=$(curl -s -X POST "$BASE_URL/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"email": "budi@example.com", "password": "P@ssw0rd!"}')
-BUDI_TOKEN=$(echo $LOGIN_BUDI_RES | jq -r .accessToken)
-BUDI_USER_ID=$(echo $LOGIN_BUDI_RES | jq -r .data.id)
+BUDI_TOKEN=$(json_extract "$LOGIN_BUDI_RES" "accessToken")
+BUDI_USER_ID=$(json_extract "$LOGIN_BUDI_RES" "data.id")
 
-if [ "$BUDI_TOKEN" != "null" ]; then
+if [ "$BUDI_TOKEN" != "null" ] && [ -n "$BUDI_TOKEN" ]; then
     echo -e "  6. Login Budi: ${GREEN}PASS (200 + token)${NC}"
 else
     echo -e "  6. Login Budi: ${RED}FAIL${NC}"
@@ -114,11 +119,11 @@ fi
 # 7. Lihat tasks Budi
 BUDI_TASKS_RES=$(curl -s -X GET "$BASE_URL/tasks" \
   -H "Authorization: Bearer $BUDI_TOKEN")
-BUDI_TASKS_COUNT=$(echo $BUDI_TASKS_RES | jq '.data | length')
-BUDI_TASK_ID=$(echo $BUDI_TASKS_RES | jq -r '.data[0].id')
+BUDI_TASKS_COUNT=$(json_extract "$BUDI_TASKS_RES" "data.length")
+BUDI_TASK_ID=$(json_extract "$BUDI_TASKS_RES" "data[0].id")
 
 # Verify that all tasks returned belong to Budi (userId matches)
-ALL_BUDI_TASKS=$(echo $BUDI_TASKS_RES | jq -r --arg budi_id "$BUDI_USER_ID" 'all(.data[]; .userId == ($budi_id | tonumber))')
+ALL_BUDI_TASKS=$(json_extract "$BUDI_TASKS_RES" "data.every(t => t.userId === $BUDI_USER_ID)")
 
 if [ "$ALL_BUDI_TASKS" == "true" ] && [ "$BUDI_TASKS_COUNT" -gt 0 ]; then
     echo -e "  7. Lihat tasks Budi: ${GREEN}PASS (200 - only $BUDI_TASKS_COUNT tasks of Budi)${NC}"
@@ -131,7 +136,7 @@ EDIT_BUDI_TASK=$(curl -s -X PATCH "$BASE_URL/tasks/$BUDI_TASK_ID" \
   -H "Authorization: Bearer $BUDI_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"title": "Updated Title Budi", "status": "in_progress"}')
-EDIT_STATUS=$(echo $EDIT_BUDI_TASK | jq -r .data.status)
+EDIT_STATUS=$(json_extract "$EDIT_BUDI_TASK" "data.status")
 
 if [ "$EDIT_STATUS" == "IN_PROGRESS" ]; then
     echo -e "  8. Edit task Budi sendiri: ${GREEN}PASS (200 Updated)${NC}"
@@ -143,14 +148,14 @@ fi
 # Find a task belonging to Siti
 ADMIN_TASKS_RES=$(curl -s -X GET "$BASE_URL/admin/tasks" \
   -H "Authorization: Bearer $ADMIN_TOKEN")
-SITI_TASK_ID=$(echo $ADMIN_TASKS_RES | jq -r --arg budi_id "$BUDI_USER_ID" '.data[] | select(.userId != ($budi_id | tonumber)) | .id' | head -n 1)
+SITI_TASK_ID=$(json_extract "$ADMIN_TASKS_RES" "data.find(t => t.userId !== $BUDI_USER_ID).id")
 
 # 9. Edit task Siti (bukan milik Budi)
 EDIT_SITI_RES=$(curl -s -X PATCH "$BASE_URL/tasks/$SITI_TASK_ID" \
   -H "Authorization: Bearer $BUDI_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"title": "Budi Hack Task", "status": "done"}')
-EDIT_SITI_CODE=$(echo $EDIT_SITI_RES | jq -r .error.code)
+EDIT_SITI_CODE=$(json_extract "$EDIT_SITI_RES" "error.code")
 
 if [ "$EDIT_SITI_CODE" == "FORBIDDEN" ]; then
     echo -e "  9. Edit task Siti (bukan milik Budi): ${GREEN}PASS (403 Forbidden)${NC}"
@@ -164,7 +169,7 @@ ADMIN_EDIT_SITI=$(curl -s -X PATCH "$BASE_URL/tasks/$SITI_TASK_ID" \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"title": "Admin Fixed Title", "status": "done"}')
-ADMIN_EDIT_STATUS=$(echo $ADMIN_EDIT_SITI | jq -r .data.status)
+ADMIN_EDIT_STATUS=$(json_extract "$ADMIN_EDIT_SITI" "data.status")
 
 if [ "$ADMIN_EDIT_STATUS" == "DONE" ]; then
     echo -e "  10. Admin edit task siapapun: ${GREEN}PASS (200 Updated)${NC}"
@@ -205,7 +210,7 @@ done
 if [ "$RATE_LIMIT_SUCCESS" == "true" ]; then
     echo -e "  11. Brute force login (6 attempts): ${GREEN}PASS (Request ke-6: 429 Too Many Requests)${NC}"
 else
-    echo -e "  11. Brute force login (6 attempts): ${RED}FAIL (Expected 429, got status code)${NC}"
+    echo -e "  11. Brute force login (6 attempts): ${RED}FAIL (Expected 429, got status code $HTTP_CODE)${NC}"
 fi
 
 if [ "$RATE_LIMIT_HEADER_SUCCESS" == "true" ]; then

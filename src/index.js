@@ -42,6 +42,9 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const duration = Date.now() - start;
     console.log(`${req.method} ${req.path} → ${res.statusCode} (${duration}ms)`);
+    if (req.method === "POST") {
+      console.log("POST Body:", JSON.stringify(req.body));
+    }
   });
   next();
 });
