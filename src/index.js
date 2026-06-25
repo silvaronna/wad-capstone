@@ -1,4 +1,6 @@
 // File: src/index.js — versi lengkap dengan semua security middleware
+const http = require("http");
+const { Server } = require("socket.io");
 const config = require("./config");
 const express = require("express");
 const helmet = require("helmet");
@@ -19,6 +21,24 @@ const adminRoutes = require("./routes/admin.routes");
 const setupSwagger = require("./docs/swagger");
 
 const app = express();
+const server = http.createServer(app);
+
+// ── SOCKET.IO SERVER ──────────────────────────────────────
+const io = new Server(server, {
+  cors: {
+    origin: config.allowedOrigins, // sama dengan CORS REST API
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000,
+});
+
+// Ekspos io agar bisa diakses dari controller
+app.set("io", io);
+
+// ── SOCKET.IO SETUP ───────────────────────────────────────
+require("./socket")(io); // load socket handler
 
 // ─── 1. Security Headers (Helmet) ──────────────────────
 // Harus dipasang PALING AWAL sebelum middleware lain
@@ -110,7 +130,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(config.port, () => {
+// PENTING: gunakan server.listen(), BUKAN app.listen()
+server.listen(config.port, () => {
   console.log("─".repeat(55));
   console.log(` ${config.appName} v${config.version}`);
   console.log(` Environment : ${config.env}`);

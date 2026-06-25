@@ -246,4 +246,17 @@ else
     echo "$HELMET_HEADERS"
 fi
 
+# ----------------------------------------------------
+# ALUR 5 — TESTING SOCKET.IO HEALTHCHECK
+# ----------------------------------------------------
+echo -e "\n${YELLOW}=== ALUR 5 — Testing Socket.IO Healthcheck ===${NC}"
+SOCKET_IO_RES=$(curl -s "$HOST_URL/socket.io/?EIO=4&transport=polling")
+if [[ "$SOCKET_IO_RES" == *"sid"* ]]; then
+    echo -e "  - Socket.IO Polling Check: ${GREEN}PASS (Handshake returned valid JSON containing sid)${NC}"
+else
+    echo -e "  - Socket.IO Polling Check: ${RED}FAIL (Expected response with 'sid', got: $SOCKET_IO_RES)${NC}"
+    exit 1
+fi
+
 echo -e "\n${BLUE}=== ALL TESTS COMPLETE ===${NC}"
+

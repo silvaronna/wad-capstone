@@ -41,6 +41,17 @@ const createTask = async (req, res, next) => {
       ...req.body,
       userId: req.user.userId,
     });
+    const io = req.app.get("io");
+    if (io) {
+      // Kirim ke semua user yang terhubung (room global)
+      io.to("tasks:global").emit("task:created", { task });
+      // Kirim notifikasi personal ke pembuat task
+      io.to(`user:${req.user.userId}`).emit("notification", {
+        type: "SUCCESS",
+        title: "Task Berhasil Dibuat",
+        message: `Task "${task.title}" telah ditambahkan.`,
+      });
+    }
     res.status(201).set("Location", `/api/v1/tasks/${task.id}`).json({
       data: task,
     });
@@ -64,6 +75,7 @@ const getTask = async (req, res, next) => {
     next(err);
   }
 };
+
 const updateTask = async (req, res, next) => {
   try {
     const task = await taskRepo.update(req.params.id, req.body);
@@ -74,11 +86,17 @@ const updateTask = async (req, res, next) => {
           message: `Task ID ${req.params.id} tidak ditemukan.`,
         },
       });
+    const io = req.app.get("io");
+    if (io) {
+      io.to("tasks:global").emit("task:updated", { task, updatedBy: req.user.userId });
+    }
     res.status(200).json({ data: task });
+
   } catch (err) {
     next(err);
   }
 };
+
 const deleteTask = async (req, res, next) => {
   try {
     const ok = await taskRepo.remove(req.params.id);
@@ -89,11 +107,16 @@ const deleteTask = async (req, res, next) => {
           message: `Task ID ${req.params.id} tidak ditemukan.`,
         },
       });
+    const io = req.app.get("io");
+    if (io) {
+      io.to("tasks:global").emit("task:deleted", { taskId: Number(req.params.id) });
+    }
     res.status(204).send();
   } catch (err) {
     next(err);
   }
 };
+
 const getTasksByUser = async (req, res, next) => {
   try {
     const result = await taskRepo.findByUser(req.params.userId);
@@ -115,6 +138,7 @@ const getTasksByUser = async (req, res, next) => {
     next(err);
   }
 };
+
 module.exports = {
   listTasks,
   createTask,
