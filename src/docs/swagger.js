@@ -79,10 +79,15 @@ const swaggerSpec = swaggerJsdoc(options);
 * Dipanggil dari src/index.js
 */
 const setupSwagger = (app) => {
-// Sajikan Swagger UI di /api/docs
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-customSiteTitle: `${config.appName} - API Docs`,
-}));
+  // Sajikan Swagger UI di /api/docs dengan bypass CSP Helmet (mencegah upgrade-insecure-requests)
+  app.use('/api/docs', (req, res, next) => {
+    res.removeHeader("Content-Security-Policy");
+    res.removeHeader("X-Content-Security-Policy");
+    res.removeHeader("X-WebKit-CSP");
+    next();
+  }, swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: `${config.appName} - API Docs`,
+  }));
 // Sajikan raw JSON spec di /api/docs.json (berguna untuk code generation)
 app.get('/api/docs.json', (req, res) => {
 res.setHeader('Content-Type', 'application/json');
