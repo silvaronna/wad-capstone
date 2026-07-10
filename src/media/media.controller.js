@@ -31,6 +31,11 @@ const createMedia = async (req, res, next) => {
       userId,
     });
 
+    const io = req.app.get("io");
+    if (io) {
+      io.to("tasks:global").emit("media:created", { media });
+    }
+
     res.status(201).json({ data: media });
   } catch (err) {
     next(err);
@@ -113,6 +118,12 @@ const deleteMedia = async (req, res, next) => {
     }
 
     await mediaRepo.remove(req.params.id);
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to("tasks:global").emit("media:deleted", { mediaId: Number(req.params.id), taskId: media.taskId });
+    }
+
     res.status(204).send();
   } catch (err) {
     next(err);

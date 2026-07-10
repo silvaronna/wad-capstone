@@ -11,7 +11,7 @@ module.exports = function setupSocket(io) {
         return next(new Error("Token tidak disertakan"));
       }
       // Verifikasi JWT menggunakan secret yang sama dengan REST API
-      const payload = jwt.verify(token, config.jwtAccessSecret);
+      const payload = jwt.verify(token, config.jwt.accessSecret);
       // Simpan data user di socket agar bisa diakses di handler
       socket.data.user = {
         userId: payload.userId,
