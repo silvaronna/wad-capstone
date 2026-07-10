@@ -57,29 +57,30 @@ categoryId: data.categoryId ? Number(data.categoryId) : null,
 });
 },
 // ─── Update sebagian field (PATCH) ──────────────────────
-async update(id, data) {
-try {
-return await prisma.task.update({
-where: { id: Number(id) },
-data: {
-...data,
-status: data.status ? data.status.toUpperCase().replace('-','_') : undefined,
-priority: data.priority ? data.priority.toUpperCase()
-: undefined,
-dueDate: data.dueDate ? new Date(data.dueDate)
-: undefined,
-},
+  async update(id, data) {
+    try {
+      const allowedData = {};
+      if (data.title !== undefined) allowedData.title = data.title;
+      if (data.description !== undefined) allowedData.description = data.description;
+      if (data.status !== undefined) allowedData.status = data.status.toUpperCase().replace('-', '_');
+      if (data.priority !== undefined) allowedData.priority = data.priority.toUpperCase();
+      if (data.dueDate !== undefined) allowedData.dueDate = data.dueDate ? new Date(data.dueDate) : null;
+      if (data.categoryId !== undefined) allowedData.categoryId = data.categoryId ? Number(data.categoryId) : null;
+
+      return await prisma.task.update({
+        where: { id: Number(id) },
+        data: allowedData,
         include: {
           user: { select: { id: true, name: true, email: true } },
           category: { select: { id: true, name: true, color: true } },
           attachments: true,
         },
-});
-} catch (e) {
-if (e.code === 'P2025') return null; // Record tidak ditemukan
-throw e;
-}
-},
+      });
+    } catch (e) {
+      if (e.code === 'P2025') return null; // Record tidak ditemukan
+      throw e;
+    }
+  },
 // ─── Hapus task ──────────────────────────────────────────
 async remove(id) {
 try {
