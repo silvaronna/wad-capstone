@@ -21,6 +21,7 @@ const adminRoutes = require("./routes/admin.routes");
 const setupSwagger = require("./docs/swagger");
 
 const app = express();
+app.set("trust proxy", 1);
 const server = http.createServer(app);
 
 // ── SOCKET.IO SERVER ──────────────────────────────────────
